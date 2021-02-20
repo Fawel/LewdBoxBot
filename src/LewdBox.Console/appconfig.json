@@ -1,0 +1,24 @@
+﻿{
+    "DanbooruAccount": {
+      "Login": "",
+      "ApiKey": ""
+    },
+
+    "DiscordWebHook": {
+      "ServerName": "",
+      "ChannelName": "",
+      "Id": "",
+      "Token": ""
+    },
+
+    "VpnConfigs": {
+      "Ip": "",
+      "Port": "",
+      "Login": "",
+      "Password": ""
+    },
+
+  "FileImageRepository": {
+    "RelativeFileHistoryPath": "imageHistory.txt"
+  }
+}

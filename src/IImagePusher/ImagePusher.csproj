@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>ImagePusher</AssemblyName>
+    <RootNamespace>ImagePusher</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LBox.Shared\LBox.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

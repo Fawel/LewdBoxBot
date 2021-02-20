@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>LBox.Console</AssemblyName>
+    <RootNamespace>LBox.Console</RootNamespace>
+    <UserSecretsId>c2f088c9-fb37-41a2-b3e1-8a732756242b</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HttpToSocks5Proxy" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiscrordWebhookImagePusher\DiscrordWebhookImagePusher.csproj" />
+    <ProjectReference Include="..\FileChosenImageRepository\WebImageChosenRepository.csproj" />
+    <ProjectReference Include="..\ImageDanbooruPuller\ImageDanbooruPuller.csproj" />
+    <ProjectReference Include="..\LewdBox.Application\LewdBox.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appconfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
