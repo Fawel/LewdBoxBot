@@ -1,5 +1,6 @@
 ﻿using ImagePusher.Core;
 using LBox.Shared;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;
@@ -13,9 +14,18 @@ namespace DiscrordHookImagePusher
         private readonly HttpClient _httpClient;
         private DiscordWebHookSettings[] _webhooks;
         private readonly string _baseDiscordUrlHook = "https://discord.com/api/webhooks";
+        private readonly ILogger<DiscrordWebhookImagePusher> _logger;
 
-        public DiscrordWebhookImagePusher(HttpClient httpClient, params DiscordWebHookSettings[] webhooks)
+        public DiscrordWebhookImagePusher(
+            HttpClient httpClient, 
+            ILogger<DiscrordWebhookImagePusher> logger, 
+            params DiscordWebHookSettings[] webhooks)
         {
+            if (logger is null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _webhooks = webhooks ?? throw new ArgumentNullException(nameof(webhooks));
             if (webhooks.Length == 0)
@@ -28,6 +38,7 @@ namespace DiscrordHookImagePusher
         {
             foreach (var hook in _webhooks)
             {
+                _logger?.LogTrace($"Sending image to discord channel {hook.ChannelName}, server {hook.ServerName}");
                 var imageToSendContent = new { content = image.Uri.ToString() };
                 var json = JsonConvert.SerializeObject(imageToSendContent);
                 var httpContent = new StringContent(json);
@@ -36,6 +47,16 @@ namespace DiscrordHookImagePusher
                 var url = $"{_baseDiscordUrlHook}/{hook.Id}/{hook.Token}";
 
                 var response = await _httpClient.PostAsync(url, httpContent, token);
+
+                if(!response.IsSuccessStatusCode)
+                {
+                    var failedRequestMessage = await response.Content.ReadAsStringAsync();
+
+                    _logger.LogError($"Failed to send image to hook, " +
+                        $"discord channel {hook.ChannelName}, server {hook.ServerName}. " +
+                        $"Status code: {response.StatusCode}," +
+                        $"Message: {failedRequestMessage}");
+                }
             }
         }
 

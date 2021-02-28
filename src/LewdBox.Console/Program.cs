@@ -9,6 +9,12 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using MihaZupan;
 using Microsoft.Extensions.Configuration;
+using ImagePuller.Core;
+using ImagePusher.Core;
+using ImagePuller.Repositories;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using NLog;
 
 namespace LBox.Console
 {
@@ -20,6 +26,30 @@ namespace LBox.Console
                 .AddUserSecrets<Program>()
                 .Build();
 
+            LogManager.Configuration = new NLogLoggingConfiguration(config.GetSection("NLog"));
+            ILoggerFactory loggerFactory = new NLogLoggerFactory();
+            var programLogger = loggerFactory.CreateLogger<Program>();
+
+            try
+            {
+                var imagePuller = GetImagePuller(config, loggerFactory);
+                var imagePusher = GetImagePusher(config, loggerFactory);
+                var imageRepository = GetImageRepository(config, loggerFactory);
+
+                var lewdBoxApp = new LewdBox(imagePuller, imagePusher, imageRepository);
+
+                var imageCount = int.Parse(config.GetSection("LewdBoxConfig:PicturePerPushCount").Value);
+
+                await lewdBoxApp.PostNewHotPictureAsync(imageCount);
+            }
+            catch (Exception ex)
+            {
+                programLogger.LogError(ex, string.Empty);
+            }
+        }
+
+        private static IImagePuller<HotWebImage> GetImagePuller(IConfigurationRoot config, ILoggerFactory loggerFactory)
+        {
             IOptions<MemoryCacheOptions> options = new MemoryCacheOptions();
             IMemoryCache memoryCache = new MemoryCache(options);
 
@@ -36,9 +66,17 @@ namespace LBox.Console
             var danbooruApiKey = config.GetSection("DanbooruAccount:ApiKey").Value;
             var settings = new DanbooruAuthenticationSettings(danbooruLogin, danbooruApiKey);
 
-            var danbooruApiClient = new DanbooruApiClient(danbooruHttpClient, settings);
-            var imagePuller = new DanbooruImagePuller(danbooruApiClient, memoryCache);
+            var apiLogger = loggerFactory.CreateLogger<DanbooruApiClient>();
+            var danbooruApiClient = new DanbooruApiClient(danbooruHttpClient, settings, apiLogger);
 
+            var imagePullerLogger = loggerFactory.CreateLogger<DanbooruImagePuller>();
+            var imagePuller = new DanbooruImagePuller(danbooruApiClient, memoryCache, imagePullerLogger);
+
+            return imagePuller;
+        }
+
+        private static IImagePusher GetImagePusher(IConfigurationRoot config, ILoggerFactory loggerFactory)
+        {
             var discrordHttpClient = new HttpClient();
 
             var discordHookServerName = config.GetSection("DiscordWebHook:ServerName").Value;
@@ -52,13 +90,23 @@ namespace LBox.Console
                 discordHookId,
                 discordHookToken);
 
-            var imagePusher = new DiscrordWebhookImagePusher(discrordHttpClient, swampChannelSettings);
+            var discordHookPusherLog = loggerFactory.CreateLogger<DiscrordWebhookImagePusher>();
 
+            var imagePusher = new DiscrordWebhookImagePusher(
+                discrordHttpClient,
+                discordHookPusherLog,
+                swampChannelSettings);
+
+            return imagePusher;
+        }
+
+        private static IChosenImageRepository<HotWebImage> GetImageRepository(
+            IConfigurationRoot config,
+            ILoggerFactory loggerFactory)
+        {
             var historyPath = config.GetSection("FileImageRepository:RelativeFileHistoryPath").Value;
             var imageRepository = new FileImageRepository(historyPath);
-
-            var lewdBoxApp = new LewdBox(imagePuller, imagePusher, imageRepository);
-            await lewdBoxApp.PostNewHotPictureAsync(5);
+            return imageRepository;
         }
     }
 }

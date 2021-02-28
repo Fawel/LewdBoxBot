@@ -1,12 +1,12 @@
 ﻿using ImagePuller.Core;
 using LBox.Shared;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static ImageDanbooruPuller.DanbooruApiClient;
 
 namespace ImageDanbooruPuller
 {
@@ -15,11 +15,16 @@ namespace ImageDanbooruPuller
         private readonly DanbooruApiClient _danbooruApiClient;
         private readonly IMemoryCache _memoryCache;
         private const int _imageSizeLimit = 7_500_000;
+        private readonly ILogger<DanbooruImagePuller> _logger;
 
-        public DanbooruImagePuller(DanbooruApiClient danbooruApiClient, IMemoryCache memoryCache)
+        public DanbooruImagePuller(
+            DanbooruApiClient danbooruApiClient,
+            IMemoryCache memoryCache,
+            ILogger<DanbooruImagePuller> logger = null)
         {
             _danbooruApiClient = danbooruApiClient;
             _memoryCache = memoryCache;
+            _logger = logger;
         }
 
         private readonly static DanbooruSearchTag[] _ignoreTags = new DanbooruSearchTag[]
@@ -34,6 +39,7 @@ namespace ImageDanbooruPuller
             IEnumerable<HotWebImage> imagesToIgnore = default,
             CancellationToken token = default)
         {
+            _logger?.LogTrace($"Get hot image request, count - {pictureCount}");
             var result = new List<HotWebImage>(pictureCount);
 
             var localImagesToIgnore = new List<HotWebImage>(imagesToIgnore);
@@ -68,6 +74,8 @@ namespace ImageDanbooruPuller
                 if (result.Count < pictureCount)
                 {
                     currentPage++;
+                    _logger?.LogTrace($"Swapping to the new page {currentPage}, " +
+                        $"found {result.Count}, need {pictureCount}");
                 }
             }
 
@@ -82,6 +90,7 @@ namespace ImageDanbooruPuller
 
             if (_memoryCache.TryGetValue(GetPageCacheKey(page), out ImageMetadata[] result))
             {
+                _logger?.LogTrace($"Got page {page} from cache");
                 return result;
             }
 
@@ -94,6 +103,8 @@ namespace ImageDanbooruPuller
             var images = await _danbooruApiClient.GetPageOfImagesAsync(searchFilter, token);
 
             _memoryCache.Set(1, images, new TimeSpan(0, 5, 0));
+
+            _logger?.LogTrace($"Page {page} loaded from api and was cached");
 
             return images;
         }
@@ -118,18 +129,23 @@ namespace ImageDanbooruPuller
                 }
 
                 var parentId = image.ParentId.Value;
+                _logger?.LogTrace($"Image {image.Id} has parent, parent id {parentId}");
+
                 ImageMetadata parentImage = await GetParentImageAsync(parentId, token);
 
                 if (parentImage.Rating != DanbooruNSFWRating.Explicit
                     || parentImage.Tags.Contains("loli")
                     || parentImage.Tags.Contains("furry"))
                 {
+                    _logger?.LogTrace("Parent picture has forbidden tags or does't have explicit rating");
+                    imagesWithoutParent.Add(image);
                     continue;
                 }
 
                 var parentHotWebImage = new HotWebImage(parentImage.MD5, parentImage.FileUri);
                 if (imagesToIgnore.Contains(parentHotWebImage))
                 {
+                    _logger?.LogTrace("Parent picture is part of ignore set");
                     continue;
                 }
 

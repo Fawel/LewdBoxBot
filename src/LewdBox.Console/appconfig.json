@@ -1,22 +1,87 @@
 ﻿{
-    "DanbooruAccount": {
-      "Login": "",
-      "ApiKey": ""
-    },
+  "LewdBoxConfig": {
+    "PicturePerPushCount": 5
+  },
 
-    "DiscordWebHook": {
-      "ServerName": "",
-      "ChannelName": "",
-      "Id": "",
-      "Token": ""
-    },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
+    }
+  },
 
-    "VpnConfigs": {
-      "Ip": "",
-      "Port": "",
-      "Login": "",
-      "Password": ""
+  "NLog": {
+    "internalLogLevel": "Info",
+    "extensions": {
+      "NLog.Web.AspNetCore": {
+        "assembly": "NLog.Web.AspNetCore"
+      }
     },
+    "targets": {
+      "debugFile": {
+        "type": "File",
+        "fileName": ".\\logs\\debug\\LBox-debug-${shortdate}.log",
+        "layout": "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=tostring}"
+      },
+      "errorFile": {
+        "type": "File",
+        "fileName": ".\\logs\\error\\LBox-error-${shortdate}.log",
+        "layout": "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=tostring}"
+      },
+      "warningFile": {
+        "type": "File",
+        "fileName": ".\\logs\\warning\\LBox-warning-${shortdate}.log",
+        "layout": "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=tostring}"
+      },
+      "infoFile": {
+        "type": "File",
+        "fileName": ".\\logs\\info\\LBox-info-${shortdate}.log",
+        "layout": "${longdate}|${uppercase:${level}}|${logger}|${message} ${exception:format=tostring}"
+      }
+    },
+    "rules": [
+      {
+        "logger": "*",
+        "minLevel": "Trace",
+        "maxLevel": "Info",
+        "writeTo": "debugFile"
+      },
+      {
+        "logger": "Microsoft.*",
+        "maxLevel": "Info",
+        "final": "true"
+      },
+      {
+        "logger": "*",
+        "Level": "Warn",
+        "writeTo": "warningFile"
+      },
+      {
+        "logger": "*",
+        "minLevel": "Error",
+        "writeTo": "errorFile"
+      }
+    ]
+  },
+
+  "DanbooruAccount": {
+    "Login": "",
+    "ApiKey": ""
+  },
+
+  "DiscordWebHook": {
+    "ServerName": "",
+    "ChannelName": "",
+    "Id": "",
+    "Token": ""
+  },
+
+  "VpnConfigs": {
+    "Ip": "",
+    "Port": "",
+    "Login": "",
+    "Password": ""
+  },
 
   "FileImageRepository": {
     "RelativeFileHistoryPath": "imageHistory.txt"
