@@ -27,6 +27,7 @@ namespace DiscrordHookImagePusher
             }
 
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _logger = logger;
             _webhooks = webhooks ?? throw new ArgumentNullException(nameof(webhooks));
             if (webhooks.Length == 0)
             {
@@ -38,7 +39,7 @@ namespace DiscrordHookImagePusher
         {
             foreach (var hook in _webhooks)
             {
-                _logger?.LogTrace($"Sending image to discord channel {hook.ChannelName}, server {hook.ServerName}");
+                _logger.LogTrace($"Sending image to discord channel {hook.ChannelName}, server {hook.ServerName}");
                 var imageToSendContent = new { content = image.Uri.ToString() };
                 var json = JsonConvert.SerializeObject(imageToSendContent);
                 var httpContent = new StringContent(json);
