@@ -13,11 +13,13 @@ namespace DiscrordHookImagePusher
     {
         private readonly HttpClient _httpClient;
         private DiscordWebHookSettings[] _webhooks;
+        private readonly int _sendDelay;
         private readonly string _baseDiscordUrlHook = "https://discord.com/api/webhooks";
         private readonly ILogger<DiscrordWebhookImagePusher> _logger;
 
         public DiscrordWebhookImagePusher(
-            HttpClient httpClient, 
+            HttpClient httpClient,
+            int sendDelay,
             ILogger<DiscrordWebhookImagePusher> logger, 
             params DiscordWebHookSettings[] webhooks)
         {
@@ -27,6 +29,7 @@ namespace DiscrordHookImagePusher
             }
 
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _sendDelay = sendDelay <= 0 ? 1000 : sendDelay;
             _logger = logger;
             _webhooks = webhooks ?? throw new ArgumentNullException(nameof(webhooks));
             if (webhooks.Length == 0)
@@ -58,6 +61,8 @@ namespace DiscrordHookImagePusher
                         $"Status code: {response.StatusCode}," +
                         $"Message: {failedRequestMessage}");
                 }
+
+                await Task.Delay(_sendDelay, token);
             }
         }
 

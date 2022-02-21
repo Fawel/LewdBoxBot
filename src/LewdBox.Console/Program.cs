@@ -83,6 +83,11 @@ namespace LBox.Console
             var discordHookChannel = config.GetSection("DiscordWebHook:ChannelName").Value;
             var discordHookId = config.GetSection("DiscordWebHook:Id").Value;
             var discordHookToken = config.GetSection("DiscordWebHook:Token").Value;
+            var discordSendDelay = int.TryParse(
+                    config.GetSection("DiscordWebHook:SendDelay").Value, 
+                    out var configValue) 
+                ? configValue 
+                : 1000;
 
             var swampChannelSettings = new DiscordWebHookSettings(
                 discordHookServerName,
@@ -94,6 +99,7 @@ namespace LBox.Console
 
             var imagePusher = new DiscrordWebhookImagePusher(
                 discrordHttpClient,
+                discordSendDelay,
                 discordHookPusherLog,
                 swampChannelSettings);
 
