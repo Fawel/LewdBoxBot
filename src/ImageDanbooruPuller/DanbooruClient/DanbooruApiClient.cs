@@ -67,9 +67,27 @@ namespace ImageDanbooruPuller
             var response = await _httpClient.GetAsync(url, token);
             var responseString = await response.Content.ReadAsStringAsync(token);
 
-            var imageMetadatas = JsonConvert.DeserializeObject<ImageMetadata[]>(responseString);
+            if(!response.IsSuccessStatusCode)
+            {
+                _logger?.LogError($"Danbooru request failed, " +
+                    $"http code -  {response.StatusCode}, " +
+                    $"message - {responseString}");
 
-            var imageWithMd5 = imageMetadatas.Where(x => !string.IsNullOrWhiteSpace(x.MD5))
+                return Array.Empty<ImageMetadata>();
+            }
+
+            var imageMetadatas = JsonConvert.DeserializeObject<ImageMetadata[]>(responseString);
+            
+            if(imageMetadatas is null)
+            {
+                _logger?.LogError($"Failed to convert response to images. " +
+                    $"\r\nResponse string - {responseString}");
+
+                return Array.Empty<ImageMetadata>();
+            }
+
+            var imageWithMd5 = imageMetadatas.Where(x => x is not null 
+                    && !string.IsNullOrWhiteSpace(x.MD5))
                 .ToArray();
 
             _logger?.LogTrace($"Find {imageMetadatas.Length} images, with MD5 - {imageWithMd5.Length}");
