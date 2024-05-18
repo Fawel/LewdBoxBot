@@ -20,6 +20,7 @@ namespace ImageDanbooruPuller
             ILogger<DanbooruApiClient> logger = null)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "gdl/1.24.5");
             _authSettings = authSettings;
             _logger = logger;
         }
